@@ -1,11 +1,7 @@
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/irq.h"
-#include "hardware/gpio.h"
 #include "hardware/uart.h"
 #include "ublox.h"
 
