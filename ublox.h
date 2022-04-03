@@ -62,21 +62,20 @@ enum _ubxMsgType {
   MT_NAV_VELNED,
 };
 
-bool gps_setup(uart_inst_t* uart_ID, uint8_t uart_tx_pin, uint8_t uart_rx_pin);
-float UbloxLatitude();
-float UbloxLongitude();
-int32_t UbloxAltitude();
-uint8_t UbloxVerticalAcc();
-uint8_t UbloxHorizontalAcc();
-uint8_t UbloxCourseAcc();
-float UbloxHeading();
-uint16_t UbloxGroundSpeed();
-int16_t UbloxClimbRate();
-
-//void GetStoredGPSData(struct AFCS *aircraft);
-uint8_t gps_value(struct GPS_DATA *gps_data);
-
 // This is a real global variable. Careful!
 extern bool UART_NEW_DATA;
+
+// External access functions
+bool GPS_Setup(uart_inst_t* uart_ID, uint8_t uart_tx_pin, uint8_t uart_rx_pin);
+float GPS_Latitude();
+float GPS_Longitude();
+int32_t GPS_Altitude();
+float GPS_Heading();
+uint16_t GPS_GndSpeed();
+int16_t GPS_ClimbRate();
+uint8_t GPS_VerticalAcc();
+uint8_t GPS_HorizontalAcc();
+uint8_t GPS_HeadingAcc();
+
 
 #endif

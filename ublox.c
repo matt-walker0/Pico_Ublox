@@ -67,7 +67,7 @@ union GPS_UNION { // Join multiple messages, used as we don't know which one we 
 
 
 // Sets up Ublox device, returns false is successful.
-bool gps_setup(uart_inst_t* uart_ID, uint8_t uart_tx_pin, uint8_t uart_rx_pin) {
+bool GPS_Setup(uart_inst_t* uart_ID, uint8_t uart_tx_pin, uint8_t uart_rx_pin) {
 	uart_id = uart_ID;
 	
 	// Initialise UART 
@@ -183,37 +183,36 @@ void UbloxClearUART() {
 
 
 // Fuctions to return current values stored within the GPS struct (posllh/velned/status sub-structs)
-float UbloxLatitude() {
+float GPS_Latitude() {
 	return(gps.navPosllh.lat/10000000.0f);
 }
-float UbloxLongitude() {
+float GPS_Longitude() {
 	return(gps.navPosllh.lng/10000000.0f);
 }
-int32_t UbloxAltitude() {
+int32_t GPS_Altitude() {
 	return(gps.navPosllh.height);
 }
-uint8_t UbloxVerticalAcc() {
+float GPS_Heading() {
+	return(gps.navVelNED.heading/10000000.0f);
+}
+uint16_t GPS_GndSpeed() {
+	return(gps.navVelNED.gnd_speed);
+}
+int16_t GPS_ClimbRate() {
+	return(gps.navVelNED.velD);
+}
+uint8_t GPS_VerticalAcc() {
 	if(gps.navPosllh.vAcc/1000 > 255) { return(255); }
  	else { return(gps.navPosllh.vAcc/1000); }
 }
-uint8_t UbloxHorizontalAcc() {
+uint8_t GPS_HorizontalAcc() {
 	if(gps.navPosllh.hAcc/1000 > 255) { return(255); }
  	else { return(gps.navPosllh.hAcc/1000); }
 }
-uint8_t UbloxCourseAcc() {
+uint8_t GPS_HeadingAcc() {
 	if(gps.navVelNED.cAcc/1000 > 255) { return(255); }
  	else { return(gps.navPosllh.hAcc/1000); }	
 }
-float UbloxHeading() {
-	return(gps.navVelNED.heading/10000000.0f);
-}
-uint16_t UbloxGroundSpeed() {
-	return(gps.navVelNED.gnd_speed);
-}
-int16_t UbloxClimbRate() {
-	return(gps.navVelNED.velD);
-}
-
 
 // Fires upon UART interrupt
 void OnUartIRQ() {
@@ -368,113 +367,3 @@ void GetUbloxDataQuick() {
 		}
 	}
 }
-
-
-
-// // Fills the GPS struct where confirmed messages have been received
-// void GetUbloxData() {
-// // IForce2D ublox binary algorithm: https://www.youtube.com/watch?v=TwhCX0c8Xe0
-// 	int fpos = 0;
-// 	uint8_t checksum[2];
-//   	int payloadSize = 10; // temp before set to msg payload size
-// 	// Message type set to none
-//   	static uint8_t currentMsgType = MT_NONE;
-// 	uint8_t counter;
-	
-// 	while(uart_is_readable_within_us(uart_id, 1000) == true) {
-
-// 		char c = uart_getc(uart_id);
-// 		//printf("pos:%d,hex:%x\n",fpos,c);
-
-// 		if(fpos < 2) {
-// 			// Check for first two header constant values (0xB5, 0x62)
-// 			if ( c == UBX_HEADER[fpos] ) {
-// 				fpos++;
-// 			}
-// 			else {
-// 				fpos = 0;
-// 			}
-// 		}
-// 		else {      
-// 		// If we come here then fpos >= 2, which means we have found a match with the UBX_HEADER
-// 		// and we are now reading in the bytes that make up the payload.
-// 		// Place the incoming byte into the ubx_msg struct. The position is fpos-2 because
-// 		// the struct does not include the initial two-byte header (UBX_HEADER).
-// 			if((fpos-2) < payloadSize) {
-// 				((unsigned char*)(&ubx_msg))[fpos-2] = c;
-// 			}
-// 			fpos++;
-// 			if (fpos == 4) {
-// 			// We have just received the second byte of the message type header, 
-// 			// so now we can check to see what kind of message it is.
-// 				if(compareMsgHeader(NAV_POSLLH_HEADER)) {
-// 					printf("inc PosLLH\n");
-// 					currentMsgType = MT_NAV_POSLLH;
-// 					payloadSize = sizeof(struct NAV_POSLLH);
-// 				}
-// 				else if(compareMsgHeader(NAV_STATUS_HEADER)) {
-// 					printf("inc STATUS\n");
-// 					currentMsgType = MT_NAV_STATUS;
-// 					payloadSize = sizeof(struct NAV_STATUS);
-// 				}
-// 				else if(compareMsgHeader(NAV_VELNED_HEADER)) {
-// 					printf("inc NED\n");
-// 					currentMsgType = MT_NAV_VELNED;
-// 					payloadSize = sizeof(struct NAV_VELNED);
-// 				}
-// 				else {
-// 					printf("Unknown msg\n");
-// 					// unknown message type, bail
-// 					fpos = 0;
-// 					continue;
-// 				}
-// 			}
-// 			if ( fpos == (payloadSize+2) ) {
-// 			// All payload bytes have now been received, so we can calculate the 
-// 			// expected checksum value to compare with the next two incoming bytes.
-// 				CalcChecksum(checksum, payloadSize);					
-// 			}
-// 			else if ( fpos == (payloadSize+3) ) {
-// 			// First byte after the payload, ie. first byte of the checksum.
-// 			// Does it match the first byte of the checksum we calculated?
-// 				if ( c != checksum[0] ) {
-// 					fpos = 0;
-// 					printf("bad ck1\n");
-// 				}
-// 			}
-// 			else if ( fpos == (payloadSize+4) ) {
-// 			// Second byte after the payload, ie. second byte of the checksum.
-// 			// Does it match the second byte of the checksum we calculated?
-// 				fpos = 0; // Reset regardless of match
-// 				if ( c == checksum[1] ) {
-// 					// Checksum matches, we have a valid message.
-// 					// Append GPS data struct with good data
-// 					if(currentMsgType == MT_NAV_POSLLH) {
-// 						printf("POSLLH\n");
-// 						gps.navPosllh = ubx_msg.navPosllh;
-// 						//printf("LLH: ");
-// 					}
-// 					else if (currentMsgType == MT_NAV_STATUS) {
-// 						printf("STATUS\n");
-// 						gps.navStatus = ubx_msg.navStatus;
-// 						//printf("STATUS: ");
-// 					}
-// 					else if (currentMsgType == MT_NAV_VELNED) {
-// 						printf("VELNED\n");
-// 						gps.navVelNED = ubx_msg.navVelNED;
-// 					}
-// 				}
-// 				else {
-// 					printf("bad ck2\n");
-// 				}
-
-// 			}
-// 			else if ( fpos > (payloadSize+4) ) {
-// 				// We have now read more bytes than both the expected payload and checksum 
-// 				// together, so something went wrong. Reset to beginning state and try again.
-// 				printf("Too many bytes\n");
-// 				fpos = 0;
-// 			}
-// 		}
-// 	}
-// }
