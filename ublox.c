@@ -8,7 +8,6 @@
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
 #include "ublox.h"
-#include "../../pins.h"
 
 // Local functions
 void OnUartIRQ();
